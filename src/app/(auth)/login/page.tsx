@@ -48,7 +48,7 @@ export default function LoginPage() {
         <CardDescription>이메일과 비밀번호를 입력해서 로그인하세요</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pb-6">
           <div className="space-y-2">
             <Label htmlFor="email">이메일</Label>
             <Input
@@ -74,7 +74,7 @@ export default function LoginPage() {
           </div>
           {error && <div className="text-sm text-destructive">{error}</div>}
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
+        <CardFooter className="flex flex-col space-y-4 pt-6">
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "로그인 중..." : "로그인"}
           </Button>
