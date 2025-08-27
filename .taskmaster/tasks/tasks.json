@@ -1,0 +1,671 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Project Setup and Initial Configuration",
+        "description": "Initialize a new Next.js 15+ project with the App Router. Integrate Tailwind CSS and shadcn/ui for styling and UI components, and configure environment variables.",
+        "details": "Create the Next.js project. Follow shadcn/ui installation guides to set it up. Configure Tailwind CSS, including setting up `slate` or `zinc` color palettes. Create and populate the `.env.local` file with placeholders for Supabase and OpenAI keys as specified in the PRD.",
+        "testStrategy": "Verify the Next.js app runs successfully. Confirm that shadcn/ui components (e.g., a Button) can be added and are styled correctly. Check that environment variables are accessible on the server side without being exposed to the client.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize Next.js 15+ Project",
+            "description": "Create a new Next.js project using the `create-next-app` CLI, ensuring the App Router, TypeScript, and Tailwind CSS options are selected during setup.",
+            "dependencies": [],
+            "details": "Run `npx create-next-app@latest` in the terminal. Follow the interactive prompts to configure the project name, and select 'Yes' for TypeScript, ESLint, Tailwind CSS, `src/` directory, and App Router.",
+            "status": "pending",
+            "testStrategy": "After creation, run `npm run dev`. The default Next.js application should be accessible and running successfully in a web browser."
+          },
+          {
+            "id": 2,
+            "title": "Configure Tailwind CSS and Base Styles",
+            "description": "Finalize the Tailwind CSS configuration by setting up the base color palette and ensuring global styles are correctly applied.",
+            "dependencies": [],
+            "details": "Edit the `tailwind.config.ts` file to extend the theme. Set the base color palette to either `slate` or `zinc` as per the project requirements. Verify that the `@tailwind` directives are present in `app/globals.css`.",
+            "status": "pending",
+            "testStrategy": "Apply a test utility class (e.g., `bg-slate-800 text-slate-50`) to the root layout (`app/layout.tsx`) and confirm the style changes are reflected on the running application."
+          },
+          {
+            "id": 3,
+            "title": "Integrate shadcn/ui",
+            "description": "Initialize shadcn/ui in the project using its CLI to automatically configure component paths, utilities, and update the Tailwind CSS configuration.",
+            "dependencies": [],
+            "details": "Run the shadcn/ui init command: `npx shadcn-ui@latest init`. Confirm the detected settings for TypeScript, style (`Default`), base color (`slate` or `zinc`), and CSS variables. Allow the CLI to update `tailwind.config.ts` and create `lib/utils.ts`.",
+            "status": "pending",
+            "testStrategy": "Check for the creation of `components.json` in the project root. Inspect `tailwind.config.ts` to confirm that it now includes the shadcn/ui plugin and theme settings."
+          },
+          {
+            "id": 4,
+            "title": "Add and Verify a Sample shadcn/ui Component",
+            "description": "Add a `Button` component from the shadcn/ui library to the main page to validate that the entire UI setup is working correctly.",
+            "dependencies": [],
+            "details": "Use the shadcn/ui CLI to add the button component: `npx shadcn-ui@latest add button`. Import the `Button` component into `app/page.tsx` and render it with some text. This will create a `components/ui/button.tsx` file.",
+            "status": "pending",
+            "testStrategy": "Verify that the button renders on the homepage with the correct styling from the chosen theme. The button should be visually distinct from a standard HTML button and respond to hover/click states."
+          },
+          {
+            "id": 5,
+            "title": "Configure Environment Variables",
+            "description": "Create and populate the local environment file with placeholder keys for Supabase and OpenAI services.",
+            "dependencies": [],
+            "details": "Create a `.env.local` file in the project's root directory. Add the following keys with empty values: `NEXT_PUBLIC_SUPABASE_URL=`, `NEXT_PUBLIC_SUPABASE_ANON_KEY=`, and `OPENAI_API_KEY=`. Ensure `.env.local` is listed in the `.gitignore` file.",
+            "status": "pending",
+            "testStrategy": "Create a temporary server component or route handler that attempts to read `process.env.OPENAI_API_KEY`. Verify via a `console.log` that the variable is accessible on the server-side but is not exposed to the client-side browser console."
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Database Schema and Supabase Setup",
+        "description": "Configure the Supabase project, create the `conversations` and `messages` tables, and implement Row Level Security (RLS) policies.",
+        "details": "In the Supabase dashboard, run the SQL scripts from the PRD to create the `conversations` and `messages` tables. Enable RLS on both tables. Add policies to ensure users can only perform CRUD operations on their own data (e.g., `user_id = auth.uid()`). Add indexes on foreign keys (`conversation_id`, `user_id`).",
+        "testStrategy": "Use the Supabase SQL editor to verify table creation and schema. Test RLS policies by running queries as different authenticated users to ensure data isolation.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create `conversations` Table Schema",
+            "description": "Write and execute the SQL script to create the `conversations` table in the Supabase project. This table will store metadata for each user's conversation.",
+            "dependencies": [],
+            "details": "Define and create the `conversations` table. Key columns should include `id` (UUID, primary key), `user_id` (UUID, foreign key to `auth.users.id`), `title` (TEXT), and `created_at` (TIMESTAMPTZ).",
+            "status": "pending",
+            "testStrategy": "Verify in the Supabase Table Editor that the `conversations` table is created with the correct columns, types, and constraints."
+          },
+          {
+            "id": 2,
+            "title": "Create `messages` Table Schema",
+            "description": "Write and execute the SQL script to create the `messages` table, which will store individual messages within each conversation.",
+            "dependencies": [
+              "2.1"
+            ],
+            "details": "Define and create the `messages` table. Key columns should include `id` (UUID, primary key), `conversation_id` (UUID, foreign key to `conversations.id` with `ON DELETE CASCADE`), `user_id` (UUID, foreign key to `auth.users.id`), `content` (TEXT), and `role` (TEXT, e.g., 'user' or 'assistant').",
+            "status": "pending",
+            "testStrategy": "Confirm the `messages` table is created and that the foreign key relationship to `conversations` is correctly established, including the cascade delete behavior."
+          },
+          {
+            "id": 3,
+            "title": "Add Indexes to Foreign Keys",
+            "description": "Create indexes on the foreign key columns of the `conversations` and `messages` tables to optimize query performance for fetching user-specific data.",
+            "dependencies": [
+              "2.1",
+              "2.2"
+            ],
+            "details": "Execute SQL commands to add a database index on `conversations.user_id` and `messages.conversation_id`. This is crucial for efficiently retrieving conversation lists and message histories.",
+            "status": "pending",
+            "testStrategy": "Use the Supabase dashboard's 'Indexes' tab for each table to confirm that the new indexes have been successfully created on the specified columns."
+          },
+          {
+            "id": 4,
+            "title": "Enable Row Level Security (RLS)",
+            "description": "Enable the Row Level Security feature for both the `conversations` and `messages` tables. This is a prerequisite for creating data access policies.",
+            "dependencies": [
+              "2.1",
+              "2.2"
+            ],
+            "details": "In the Supabase dashboard, navigate to the 'Authentication' -> 'Policies' section for both the `conversations` and `messages` tables and toggle RLS to 'Enabled'. This will deny all access by default until specific policies are added.",
+            "status": "pending",
+            "testStrategy": "After enabling RLS but before adding policies, run a `SELECT *` query on both tables. The query should return zero rows, confirming that access is now restricted."
+          },
+          {
+            "id": 5,
+            "title": "Implement RLS Policies for Data Isolation",
+            "description": "Create and apply RLS policies to ensure users can only perform CRUD (Create, Read, Update, Delete) operations on their own conversations and messages.",
+            "dependencies": [
+              "2.4"
+            ],
+            "details": "For both tables, write and apply RLS policies for `SELECT`, `INSERT`, `UPDATE`, and `DELETE`. All policies must use the condition `auth.uid() = user_id` in their `USING` and `WITH CHECK` clauses to enforce data ownership.",
+            "status": "pending",
+            "testStrategy": "Use the Supabase SQL editor's 'Run as authenticated user' feature. Execute queries as different test users to verify that a user can only access their own data and is blocked from accessing data belonging to others."
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "User Authentication Flow",
+        "description": "Integrate Supabase Auth to handle user sign-up, sign-in, and sign-out. Manage user sessions and protect dashboard routes.",
+        "details": "Create UI pages for `/login` and `/signup` within an `(auth)` route group. Use the Supabase client library to handle email/password authentication. Implement session management using Next.js middleware to protect the `(dashboard)` routes. Add a sign-out button to clear the session.",
+        "testStrategy": "A new user can successfully sign up. A registered user can sign in. An unauthenticated user is redirected from a protected chat page to the login page. A signed-in user can sign out, clearing their session.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Auth UI Pages and Route Group",
+            "description": "Set up the Next.js route group `(auth)` and create the static UI for the `/login` and `/signup` pages using shadcn/ui components.",
+            "dependencies": [],
+            "details": "Create the directory structure `app/(auth)/login/page.tsx` and `app/(auth)/signup/page.tsx`. Use shadcn/ui `Card`, `Input`, `Label`, and `Button` components to build the forms for email and password input. This subtask focuses only on the visual layout without any authentication logic.",
+            "status": "pending",
+            "testStrategy": "Verify that navigating to `/login` and `/signup` renders the respective forms correctly. Check that the UI is responsive and components are styled as expected."
+          },
+          {
+            "id": 2,
+            "title": "Implement User Sign-Up Logic",
+            "description": "Connect the sign-up form to the Supabase client to handle new user registration via email and password.",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "In `app/(auth)/signup/page.tsx`, convert the page to a client component. Use the `useState` hook to manage form state (email, password). On form submission, call the `supabase.auth.signUp()` function. Implement logic to handle both success (e.g., show a 'Check your email' message) and error states (e.g., display an error message below the form).",
+            "status": "pending",
+            "testStrategy": "Attempt to sign up with a new, valid email. Verify that Supabase sends a confirmation email and the UI shows a success message. Attempt to sign up with an invalid email or an existing email to confirm error handling works."
+          },
+          {
+            "id": 3,
+            "title": "Implement User Sign-In Logic",
+            "description": "Connect the sign-in form to the Supabase client to authenticate existing users and redirect them upon success.",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "In `app/(auth)/login/page.tsx`, convert the page to a client component. Use `useState` for form state. On form submission, call `supabase.auth.signInWithPassword()`. Upon a successful login, use the Next.js `useRouter` to programmatically redirect the user to a dashboard page (e.g., `/chat`). Handle login errors, such as 'Invalid login credentials'.",
+            "status": "pending",
+            "testStrategy": "After signing up and confirming an account, attempt to sign in with the correct credentials. Verify successful redirection to the dashboard. Attempt to sign in with incorrect credentials to verify the error message is displayed."
+          },
+          {
+            "id": 4,
+            "title": "Create Middleware for Protected Route Session Management",
+            "description": "Implement Next.js middleware to check for an active Supabase session and protect all routes within the `(dashboard)` group.",
+            "dependencies": [
+              "3.3"
+            ],
+            "details": "Create a `middleware.ts` file at the root of the `app` directory. Configure the middleware's `matcher` to run on all dashboard routes (e.g., `/chat/:path*`). Inside the middleware, use a Supabase server client to check for a valid user session. If no session exists, redirect the unauthenticated user to the `/login` page. If a session is present, allow the request to proceed.",
+            "status": "pending",
+            "testStrategy": "While logged out, attempt to access a protected dashboard URL directly. Verify you are redirected to `/login`. After logging in, verify you can access the protected URL."
+          },
+          {
+            "id": 5,
+            "title": "Implement Sign-Out Functionality",
+            "description": "Add a sign-out button to the dashboard layout that clears the user's session and redirects them to the login page.",
+            "dependencies": [
+              "3.3",
+              "3.4"
+            ],
+            "details": "Create a client component for the sign-out button, which will be placed in a shared layout for the dashboard. The button's `onClick` handler should call the `supabase.auth.signOut()` function. After the sign-out completes, redirect the user to the `/login` page.",
+            "status": "pending",
+            "testStrategy": "Log in to the application. Click the sign-out button. Verify that the user session is cleared and you are redirected to the `/login` page. Attempt to navigate back to a protected route and confirm you are blocked by the middleware."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Core UI Layout and Chat Interface",
+        "description": "Build the main application layout with a sidebar and develop the client-side components for the chat view, including the message input and display list.",
+        "details": "Create `/app/(dashboard)/layout.tsx` with a sidebar and main content area. In the chat page, build a `Textarea` for multi-line input (Enter to send, Shift+Enter for newline) and a `Button` that is disabled when input is empty. Create a message list component using `ScrollArea` that renders messages with distinct styles for 'user' (right) and 'assistant' (left), including timestamps.",
+        "testStrategy": "After login, the dashboard layout with a sidebar is visible. The chat input form works as specified. Mock messages are displayed with correct alignment and styling for user and assistant roles.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Dashboard Layout with Sidebar",
+            "description": "Implement the main application layout for the dashboard area, including a persistent sidebar and a main content area for page content.",
+            "dependencies": [],
+            "details": "Create the file `/app/(dashboard)/layout.tsx`. Use CSS or a UI library to structure a two-column layout: a fixed-width sidebar on the left and a flexible main content area on the right. The sidebar should be a placeholder for future navigation links and user information.",
+            "status": "pending",
+            "testStrategy": "Navigate to any page within the `/app/(dashboard)/` route group. Verify that the sidebar is consistently visible on the left and the main page content renders in the area to the right."
+          },
+          {
+            "id": 2,
+            "title": "Develop Chat Input Form Component",
+            "description": "Build the form component for user input, including a multi-line textarea and a send button with dynamic state.",
+            "dependencies": [],
+            "details": "Create a client component for the chat input form. It should contain a `Textarea` and a `Button`. The `Button` must be disabled by default and only become enabled when the `Textarea` contains non-whitespace text. Manage the input state using `useState`.",
+            "status": "pending",
+            "testStrategy": "Render the component. Verify the send button is disabled. Type text into the textarea and verify the button becomes enabled. Clear the text and verify the button becomes disabled again."
+          },
+          {
+            "id": 3,
+            "title": "Implement Advanced Textarea Input Logic",
+            "description": "Add keyboard event handling to the chat textarea to allow sending messages with 'Enter' and creating new lines with 'Shift+Enter'.",
+            "dependencies": [
+              "4.2"
+            ],
+            "details": "In the chat input form component, add an `onKeyDown` event handler to the `Textarea`. If the 'Enter' key is pressed without the 'Shift' key, prevent the default newline behavior and trigger the form submission function. If 'Shift+Enter' is pressed, allow the default behavior to create a new line.",
+            "status": "pending",
+            "testStrategy": "With text in the input, press 'Enter' and confirm the form submission is triggered. Press 'Shift+Enter' and confirm a new line is added to the textarea without triggering submission."
+          },
+          {
+            "id": 4,
+            "title": "Create Individual Message Component",
+            "description": "Develop a component to render a single chat message, with distinct styling and alignment for 'user' and 'assistant' roles.",
+            "dependencies": [],
+            "details": "Create a component that accepts a message object (e.g., `{ id: string, role: 'user' | 'assistant', content: string, createdAt: string }`). Use conditional styling to align 'user' messages to the right with one color scheme, and 'assistant' messages to the left with another. Display the message content and a formatted timestamp (e.g., 'HH:mm').",
+            "status": "pending",
+            "testStrategy": "Render the component with a 'user' role prop and verify right alignment and user-specific styles. Render it again with an 'assistant' role prop and verify left alignment and assistant-specific styles. Check that the timestamp is formatted correctly."
+          },
+          {
+            "id": 5,
+            "title": "Build Scrollable Message List",
+            "description": "Create a component that displays a list of chat messages using a scrollable container that automatically scrolls to the bottom for new messages.",
+            "dependencies": [
+              "4.4"
+            ],
+            "details": "Create a message list component that accepts an array of message objects. Use the `map` function to render each message using the `Individual Message Component`. Wrap the list in a `ScrollArea` component to handle overflow. Implement a mechanism (e.g., using `useRef` and `useEffect`) to automatically scroll to the bottom of the list when the message array changes. Use a mock array of messages for initial development.",
+            "status": "pending",
+            "testStrategy": "Populate the list with enough mock messages to cause an overflow. Verify the scrollbar appears. Add a new message to the mock array and confirm the view automatically scrolls to show the latest message at the bottom."
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "OpenAI Streaming API Endpoint",
+        "description": "Implement a Next.js Route Handler at `/api/chat` that receives a user message, sends it to the OpenAI API, and streams the response back to the client.",
+        "details": "Create a POST endpoint at `/api/chat/route.ts`. It will receive `{ message, conversationId? }`. It must fetch recent message history for context. Use the OpenAI SDK (GPT-4o or GPT-4o mini) to generate a streaming response (`ReadableStream`). Secure the endpoint by reading the `OPENAI_API_KEY` from server-side environment variables only.",
+        "testStrategy": "Use a tool like Postman or `curl` to send a request to `/api/chat`. Verify that it returns a streaming response (e.g., `text/event-stream`). Check server logs for any errors from the OpenAI API.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize Next.js Route Handler and Secure API Key",
+            "description": "Create the file structure for the `/api/chat` endpoint and configure the server-side environment variable for the OpenAI API key.",
+            "dependencies": [],
+            "details": "Create the file at `/app/api/chat/route.ts`. Implement the basic `POST` function structure that accepts a `Request` object. Add the `OPENAI_API_KEY` to the `.env.local` file and ensure it is read securely within the route handler, verifying it is not exposed to the client-side.",
+            "status": "pending",
+            "testStrategy": "Verify the `.env.local` file is included in `.gitignore`. Make a test request to the endpoint and log the API key on the server to confirm it's being read correctly. Ensure the endpoint returns a placeholder response initially."
+          },
+          {
+            "id": 2,
+            "title": "Parse Request and Fetch Conversation History",
+            "description": "Implement logic to parse the incoming request body and fetch the relevant message history from the database to build context for the AI.",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "Parse the JSON body of the POST request to extract `{ message, conversationId? }`. If a `conversationId` is provided, connect to the database (e.g., Supabase client) and query the `messages` table for all messages matching that ID, ordered by creation date. Format the fetched history and the new user message into the array format required by the OpenAI API (`[{ role: 'user', content: '...' }]`).",
+            "status": "pending",
+            "testStrategy": "Send a request with a known `conversationId`. Check server logs to verify that the correct message history is fetched and formatted. Test the case where `conversationId` is not provided, ensuring the context starts fresh."
+          },
+          {
+            "id": 3,
+            "title": "Integrate OpenAI SDK and Initiate Streaming Request",
+            "description": "Use the official OpenAI SDK to send the prepared message payload to the GPT-4o mini model, specifically requesting a streaming response.",
+            "dependencies": [
+              "5.2"
+            ],
+            "details": "Import and instantiate the `OpenAI` client using the API key from environment variables. Call the `openai.chat.completions.create` method. Pass the formatted message payload, set the model to `gpt-4o-mini` or `gpt-4o`, and set the `stream` parameter to `true`.",
+            "status": "pending",
+            "testStrategy": "Log the response object from the `create` call on the server to confirm it's a stream object, not a completed JSON response. Check for any immediate authentication or payload errors from the OpenAI API in the server logs."
+          },
+          {
+            "id": 4,
+            "title": "Implement Response Streaming to Client",
+            "description": "Convert the stream from the OpenAI SDK into a `ReadableStream` that can be sent back to the client as a streaming HTTP response.",
+            "dependencies": [
+              "5.3"
+            ],
+            "details": "Utilize the `OpenAIStream` utility from the Vercel `ai` package to process the raw stream from the OpenAI API. This utility handles parsing the server-sent events and extracting token deltas. Return a new `Response` object, passing the resulting stream as the body and setting the `Content-Type` header appropriately (e.g., `text/plain` or `text/event-stream`).",
+            "status": "pending",
+            "testStrategy": "Use a tool like `curl` or Postman to call the `/api/chat` endpoint. Verify that the response headers are correct and that the body streams back token by token, rather than waiting for the full response to complete."
+          },
+          {
+            "id": 5,
+            "title": "Implement Error Handling and Logging",
+            "description": "Add robust error handling for the entire process, from request parsing to stream generation, and log any errors for debugging purposes.",
+            "dependencies": [
+              "5.4"
+            ],
+            "details": "Wrap the core logic in a `try...catch` block. Handle potential errors such as invalid request bodies, database query failures, and API errors from OpenAI (e.g., 401 Unauthorized, 429 Rate Limit Exceeded). Return appropriate HTTP status codes (e.g., 400, 500) with a clear JSON error message. Log detailed error information on the server using `console.error`.",
+            "status": "pending",
+            "testStrategy": "Trigger an error by sending a request with an invalid `OPENAI_API_KEY` and verify a 401/500 status code is returned with a JSON error message. Send a malformed request body and verify a 400 error is returned."
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Client-Side AI Integration and State Management",
+        "description": "Connect the chat interface to the `/api/chat` endpoint to send messages and render the streaming AI response in real-time.",
+        "details": "Use TanStack Query or SWR for client-side state management. Implement an optimistic update to immediately show the user's message. On form submission, call the `/api/chat` endpoint. Read the `ReadableStream` from the response and append the tokens to the assistant's message in the UI as they arrive.",
+        "testStrategy": "Send a message from the UI. The user's message should appear instantly. The assistant's response should appear and stream in token by token. A loading indicator should be shown while awaiting the first token.",
+        "priority": "high",
+        "dependencies": [
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Setup TanStack Query for Chat State",
+            "description": "Install and configure TanStack Query to manage the state of chat messages, including setting up the QueryClientProvider and creating a custom hook to fetch and cache messages.",
+            "dependencies": [],
+            "details": "Install `@tanstack/react-query`. Wrap the root application component with `QueryClientProvider`. Create a custom hook, e.g., `useChat(conversationId)`, that uses `useQuery` to fetch existing messages for a given conversation. Define a stable query key structure, such as `['conversations', conversationId, 'messages']`.",
+            "status": "pending",
+            "testStrategy": "Verify that initial messages for a conversation are fetched and displayed when a conversation is selected. Check React DevTools to confirm the query is cached with the correct key."
+          },
+          {
+            "id": 2,
+            "title": "Implement Chat Form with Optimistic Update",
+            "description": "Develop the chat input form and implement an optimistic update using TanStack Query to instantly display the user's message in the UI upon submission.",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "On form submission, before the API call is made, use `queryClient.setQueryData` to manually add the new user message to the local cache. The message object should include the text content and a temporary status (e.g., `status: 'pending'`). This provides immediate feedback to the user.",
+            "status": "pending",
+            "testStrategy": "Type a message and submit the form. The message should appear instantly in the chat history. Verify in the UI and with React DevTools that the local cache is updated before the network request is sent."
+          },
+          {
+            "id": 3,
+            "title": "Create API Mutation to Call /api/chat",
+            "description": "Implement a `useMutation` hook from TanStack Query to handle the POST request to the `/api/chat` endpoint, managing loading, success, and error states.",
+            "dependencies": [
+              "6.2"
+            ],
+            "details": "Create a `useMutation` hook that sends the message payload (`{ message, conversationId }`) to `/api/chat`. In the `onMutate` function, perform the optimistic update. Implement an `onError` callback to revert the optimistic update if the API call fails. Implement an `onSuccess` callback to update the message's status from 'pending' to 'success'.",
+            "status": "pending",
+            "testStrategy": "Use browser developer tools to monitor the network tab. Confirm that submitting a message triggers a POST request to `/api/chat`. Manually simulate an API error to ensure the optimistic update is correctly reverted."
+          },
+          {
+            "id": 4,
+            "title": "Process ReadableStream from API Response",
+            "description": "Handle the streaming response from the API. This involves reading the `ReadableStream` from the fetch response and decoding the incoming data chunks in real-time.",
+            "dependencies": [
+              "6.3"
+            ],
+            "details": "Within the mutation's success handler, access the response body via `response.body`. Use `body.getReader()` and a `TextDecoder` to read and decode the stream. Create a loop (`while(true)`) to process chunks from `reader.read()` until `done` is true.",
+            "status": "pending",
+            "testStrategy": "Place `console.log` statements inside the stream reading loop to output the decoded text chunks. Verify in the browser console that tokens from the AI are being received and decoded correctly."
+          },
+          {
+            "id": 5,
+            "title": "Render Streaming Tokens to UI",
+            "description": "Update the chat UI in real-time by appending the decoded tokens from the stream to the assistant's message bubble.",
+            "dependencies": [
+              "6.1",
+              "6.4"
+            ],
+            "details": "First, optimistically add a new, empty assistant message to the cache. Then, as each token is decoded from the stream, use `queryClient.setQueryData` to find the assistant's message in the cache and append the new token to its content. This will trigger a re-render and create the typing effect.",
+            "status": "pending",
+            "testStrategy": "Send a message and observe the UI. A new message bubble for the assistant should appear, and its text content should grow token-by-token, simulating a real-time conversation."
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Conversation and Message Persistence",
+        "description": "Automatically save user messages and completed AI responses to the Supabase database. Handle the creation of new conversations.",
+        "details": "Modify the `/api/chat` handler or create new API routes. When a user sends the first message of a new chat, create a new record in the `conversations` table. For every user message and completed AI response, insert a new record into the `messages` table, linked to the correct `conversation_id`.",
+        "testStrategy": "Start a new chat and send a message. Verify a new record is created in the `conversations` table. Verify both the user's message and the full AI response are saved in the `messages` table with the correct `role` and `conversation_id`.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define and Create Supabase Database Tables",
+            "description": "Create the `conversations` and `messages` tables in the Supabase database schema required for persistence.",
+            "dependencies": [],
+            "details": "Using the Supabase SQL Editor or migrations, define and create two tables. The `conversations` table should include columns for `id`, `user_id`, `title`, and `created_at`. The `messages` table should include `id`, `conversation_id`, `role` (e.g., 'user', 'assistant'), `content`, and `created_at`. Establish a foreign key relationship from `messages.conversation_id` to `conversations.id` with `ON DELETE CASCADE` enabled.",
+            "status": "pending",
+            "testStrategy": "Verify in the Supabase dashboard that the `conversations` and `messages` tables exist with the correct columns, types, and the foreign key constraint is properly configured."
+          },
+          {
+            "id": 2,
+            "title": "Implement New Conversation Creation Logic",
+            "description": "Add logic to the `/api/chat` handler to create a new conversation record when a user sends the first message of a chat.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "In the `/api/chat` route handler, before processing the message, check if the request payload includes a `conversationId`. If the `conversationId` is null or absent, insert a new row into the `conversations` table associated with the current authenticated user. The ID of this newly created conversation must be used for subsequent steps.",
+            "status": "pending",
+            "testStrategy": "Make a request to `/api/chat` without a `conversationId`. Check the `conversations` table in Supabase to confirm a new record was created with the correct `user_id`."
+          },
+          {
+            "id": 3,
+            "title": "Implement User Message Persistence",
+            "description": "Save the incoming user message to the `messages` table for the corresponding conversation.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "Within the `/api/chat` handler, after a `conversationId` has been established (either from the request or by creating a new one), insert a new record into the `messages` table. This record should contain the `conversation_id`, the user's message content from the request, and the `role` set to 'user'. This should occur before the call to the OpenAI API.",
+            "status": "pending",
+            "testStrategy": "Send a message to an existing or new chat. Verify that a new record with `role: 'user'` and the correct content is created in the `messages` table, linked to the correct `conversation_id`."
+          },
+          {
+            "id": 4,
+            "title": "Implement Completed AI Response Persistence",
+            "description": "Save the full, completed AI response to the `messages` table after the response stream has finished.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "Modify the logic that handles the OpenAI API stream. After the entire response has been streamed to the client, assemble the complete AI-generated text. Then, insert this full response as a single new record into the `messages` table with the `role` set to 'assistant' and linked to the correct `conversation_id`.",
+            "status": "pending",
+            "testStrategy": "Complete a chat exchange. Check the `messages` table to verify a new record with `role: 'assistant'` exists, containing the full, non-chunked response from the AI, linked to the correct `conversation_id`."
+          },
+          {
+            "id": 5,
+            "title": "Orchestrate Persistence Flow and Return `conversationId`",
+            "description": "Integrate all persistence steps into the `/api/chat` handler and ensure the `conversationId` is returned to the client.",
+            "dependencies": [
+              "7.2",
+              "7.3",
+              "7.4"
+            ],
+            "details": "Refactor the `/api/chat` handler to orchestrate the entire persistence flow: 1. Create conversation if new (Subtask 7.2). 2. Save user message (Subtask 7.3). 3. Stream AI response. 4. Save completed AI response (Subtask 7.4). Modify the response mechanism to send the `conversationId` back to the client (e.g., via a custom header or a special message in the stream) so the UI can navigate to `/chat/[conversationId]`.",
+            "status": "pending",
+            "testStrategy": "Start a new chat from the UI. Verify the URL updates to `/chat/[newId]` after the first response. Check the database to confirm that one `conversations` record, one user `messages` record, and one assistant `messages` record have all been created correctly."
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Conversation History and Navigation",
+        "description": "Fetch and display the list of the user's past conversations in the sidebar, allowing users to view and continue them.",
+        "details": "In the `(dashboard)/layout.tsx` server component, fetch the user's conversations from Supabase. Render the list in the sidebar, with each item linking to `/chat/[conversationId]`. The `[conversationId]/page.tsx` page will fetch and display the messages for that specific conversation.",
+        "testStrategy": "Verify the sidebar lists all conversations for the logged-in user. Clicking a conversation navigates to the correct URL and loads its message history. Starting a new chat adds an item to the history list after the first message exchange.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Server-Side Function to Fetch Conversation List",
+            "description": "Implement a server-side function to query the Supabase `conversations` table and retrieve all conversations belonging to the currently authenticated user, ordered by creation date.",
+            "dependencies": [],
+            "details": "In a new or existing server-side utilities file (e.g., `lib/supabase/queries.ts`), create an async function that accepts a `userId`. This function will use the Supabase client to `select` all conversations from the `conversations` table where the `user_id` column matches the provided ID. The results should be ordered descending by `created_at`.",
+            "status": "pending",
+            "testStrategy": "Write a server-side test or temporarily call this function in a page/layout to log the output, verifying it fetches the correct data for a known user and handles users with no conversations gracefully (returns an empty array)."
+          },
+          {
+            "id": 2,
+            "title": "Develop `ConversationHistoryList` Client Component",
+            "description": "Create a reusable client component that takes a list of conversations and renders them as a navigable list of links.",
+            "dependencies": [],
+            "details": "Create a new component file, e.g., `components/sidebar/conversation-history-list.tsx`. This component will be a client component (`'use client'`). It will accept an array of conversation objects as a prop. Inside, it will map over the array and render a Next.js `<Link>` for each item, pointing to `/chat/[id]` and displaying the conversation's title.",
+            "status": "pending",
+            "testStrategy": "Use Storybook or a temporary test page to render the component with mock conversation data. Verify that it renders a list of links with the correct `href` attributes and text."
+          },
+          {
+            "id": 3,
+            "title": "Integrate Conversation History into Dashboard Layout",
+            "description": "Fetch the user's conversations in the main dashboard layout and render the list using the `ConversationHistoryList` component.",
+            "dependencies": [
+              "8.1",
+              "8.2"
+            ],
+            "details": "In the `(dashboard)/layout.tsx` Server Component, get the current user's session and ID. Call the data fetching function from subtask 8.1 to retrieve the list of conversations. Pass this list as a prop to the `ConversationHistoryList` component (from subtask 8.2) and place it within the sidebar's JSX structure.",
+            "status": "pending",
+            "testStrategy": "Log in to the application. Verify that the sidebar correctly displays the list of conversations fetched from the database for the logged-in user. The list should appear in the designated sidebar area."
+          },
+          {
+            "id": 4,
+            "title": "Implement Active State for Selected Conversation",
+            "description": "Visually highlight the currently active conversation in the sidebar list to provide clear navigational context to the user.",
+            "dependencies": [
+              "8.3"
+            ],
+            "details": "Modify the `ConversationHistoryList` client component. Use the `usePathname` hook from `next/navigation` to get the current URL path. Inside the `map` function, compare the path with each conversation's link (`/chat/[id]`). Conditionally apply an 'active' CSS class (e.g., a different background color or text weight) to the link that matches the current path.",
+            "status": "pending",
+            "testStrategy": "Navigate to a specific chat URL, e.g., `/chat/abc-123`. Confirm that the corresponding conversation link in the sidebar is visually highlighted. Click on a different conversation and verify that the highlight moves to the new active item."
+          },
+          {
+            "id": 5,
+            "title": "Fetch and Display Messages on Conversation Page",
+            "description": "Implement the data fetching on the dynamic conversation page to load and display the message history for the selected conversation.",
+            "dependencies": [],
+            "details": "In the `(dashboard)/chat/[conversationId]/page.tsx` file, which will be a Server Component, access the `conversationId` from the `params` prop. Create a server-side function to fetch all messages from the `messages` table where `conversation_id` matches the param, ordered by `created_at` ascending. Pass the fetched messages as an `initialMessages` prop to the main `Chat` component that renders the conversation UI.",
+            "status": "pending",
+            "testStrategy": "After seeding a conversation with messages in the database, navigate to its URL. Verify that the page loads and displays all the historical messages for that conversation in the correct chronological order."
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Conversation Deletion",
+        "description": "Allow users to delete conversations from the history list via a confirmation dialog.",
+        "details": "Add a delete option to each conversation in the sidebar (e.g., using `DropdownMenu`). On click, show a confirmation `Dialog`. If confirmed, call a `DELETE /api/conversations/[id]` endpoint which deletes the conversation and its associated messages (leveraging `ON DELETE CASCADE`).",
+        "testStrategy": "Deleting a conversation from the sidebar removes it from the list after confirmation. Verify the corresponding records are deleted from the `conversations` and `messages` tables in Supabase.",
+        "priority": "medium",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create DELETE API Endpoint for Conversations",
+            "description": "Implement the backend API route at `/api/conversations/[id]` to handle the secure deletion of a specific conversation.",
+            "dependencies": [],
+            "details": "Create a `route.ts` file for the dynamic API route. The `DELETE` handler must first authenticate the user's session, then verify that the user owns the conversation they are attempting to delete. If authorized, use the Supabase client to execute a `delete()` query on the `conversations` table. This relies on the `ON DELETE CASCADE` constraint being set on the `messages.conversation_id` foreign key to also remove all associated messages.",
+            "status": "pending",
+            "testStrategy": "Use an API client (e.g., Postman) to send an authenticated DELETE request to the endpoint. Verify that a 200-level status is returned, and check the Supabase tables to confirm the target conversation and its related messages have been removed. Test unauthorized access to ensure a 403/401 error is returned."
+          },
+          {
+            "id": 2,
+            "title": "Add 'Delete' Option to Conversation Item UI",
+            "description": "Update the sidebar component to include a user-interface element for initiating the deletion of a conversation.",
+            "dependencies": [],
+            "details": "Modify the component responsible for rendering each conversation link in the history sidebar (established in Task #8). Integrate a `DropdownMenu` component from shadcn/ui for each item. This menu should contain a 'Delete' option, styled appropriately (e.g., with a red color to indicate a destructive action). At this stage, clicking the option does not need to be functional.",
+            "status": "pending",
+            "testStrategy": "Visually inspect the conversation history sidebar. Confirm that each conversation item has a dropdown menu and that the 'Delete' option is present and styled correctly within it."
+          },
+          {
+            "id": 3,
+            "title": "Implement Deletion Confirmation Dialog",
+            "description": "Create a reusable confirmation dialog to prevent accidental deletions.",
+            "dependencies": [],
+            "details": "Using shadcn/ui, build an `AlertDialog` component. The dialog should clearly state that deleting a conversation is permanent and cannot be undone. It must include a 'Cancel' button to close the dialog and a 'Confirm' button to proceed with the deletion. The visibility of this dialog will be controlled by component state.",
+            "status": "pending",
+            "testStrategy": "Create a temporary button on the page to trigger the dialog's visibility. Verify the dialog appears correctly, displays the warning message, and that the 'Cancel' button successfully closes it."
+          },
+          {
+            "id": 4,
+            "title": "Connect UI Flow: Trigger Dialog and API Call",
+            "description": "Wire the client-side logic to connect the delete option, confirmation dialog, and the backend API.",
+            "dependencies": [
+              "9.1",
+              "9.2",
+              "9.3"
+            ],
+            "details": "Implement the state management and event handlers. When the 'Delete' option (from subtask 9.2) is clicked, update the state to show the confirmation dialog (from 9.3) and store the ID of the conversation to be deleted. If the user clicks 'Confirm' in the dialog, trigger an asynchronous `fetch` request to the `DELETE /api/conversations/[id]` endpoint (from 9.1). Implement a loading state to provide user feedback while the request is in progress.",
+            "status": "pending",
+            "testStrategy": "Click the 'Delete' option on a conversation. Verify the confirmation dialog appears. Click 'Confirm' and use the browser's network tab to verify that the correct `DELETE` request is sent to the API endpoint."
+          },
+          {
+            "id": 5,
+            "title": "Update Client State for Instant UI Refresh",
+            "description": "After a successful deletion, remove the conversation from the list in the UI without requiring a page reload.",
+            "dependencies": [
+              "9.4"
+            ],
+            "details": "In the callback for the successful API request (the `.then()` or `await` block), update the client-side state that holds the array of conversations. Filter out the conversation with the deleted ID. This state update will cause React to re-render the sidebar, making the conversation disappear instantly. Also, implement error handling to show a toast notification if the API call fails.",
+            "status": "pending",
+            "testStrategy": "Perform the end-to-end deletion flow. After confirming deletion, verify the conversation item is immediately removed from the sidebar. Manually trigger an API error to ensure a user-friendly error message (e.g., a toast) is displayed."
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Loading, Error States, and UI Polish",
+        "description": "Implement robust loading states using skeleton components and provide graceful error handling for API and network failures.",
+        "details": "Use `Skeleton` components from shadcn/ui for initial page loads (e.g., conversation history, message list). Implement `try/catch` blocks for API calls and display user-friendly error messages in the UI for failures (e.g., 'Failed to get AI response'). Ensure accessibility with ARIA labels.",
+        "testStrategy": "Skeleton loaders are visible while data is being fetched. Manually trigger an API error (e.g., by providing a wrong API key) to confirm a fallback error message is shown to the user without crashing the app.",
+        "priority": "medium",
+        "dependencies": [
+          6,
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Skeleton Loader for Conversation History",
+            "description": "Create and integrate a skeleton component to display while the user's conversation history is being fetched from the server upon initial page load.",
+            "dependencies": [],
+            "details": "Using the `Skeleton` component from shadcn/ui, build a placeholder that mimics the layout of the conversation list in the sidebar. This loader should be conditionally rendered based on the data fetching status for the conversation list.",
+            "status": "pending",
+            "testStrategy": "On page load, verify the skeleton loader for the conversation history is visible. Once the data loads, the skeleton should be replaced by the actual conversation list or an empty state message."
+          },
+          {
+            "id": 2,
+            "title": "Implement Skeleton Loader for Message List",
+            "description": "Create and integrate a skeleton component to display while the messages for a selected conversation are being loaded.",
+            "dependencies": [],
+            "details": "Use the `Skeleton` component from shadcn/ui to create a placeholder that mimics the structure of several chat messages (e.g., avatar and text bubbles). This should be displayed in the main chat panel when a conversation is selected and its message history is being fetched.",
+            "status": "pending",
+            "testStrategy": "When selecting a conversation from the history, confirm the message list area shows the skeleton loaders. After the messages are fetched, they should replace the skeletons."
+          },
+          {
+            "id": 3,
+            "title": "Implement Inline Error Handling for AI Chat Response",
+            "description": "Wrap the client-side API call to the `/api/chat` endpoint in a `try/catch` block to handle failures gracefully within the chat interface.",
+            "dependencies": [],
+            "details": "When the fetch request for a streaming AI response fails, catch the error. Instead of a generic toast, display a specific error message directly in the chat UI as if it were a message from the system (e.g., 'Failed to get AI response. Please check your connection or try again.'). This provides context-specific feedback.",
+            "status": "pending",
+            "testStrategy": "Manually trigger an API failure for the `/api/chat` endpoint (e.g., by using an invalid API key). Verify that the application does not crash and that a clear error message is displayed to the user within the chat message list."
+          },
+          {
+            "id": 4,
+            "title": "Implement Global Error Notifications for Data Fetching",
+            "description": "Set up a global notification system using toasts to inform the user of non-critical data fetching errors, such as loading the conversation history.",
+            "dependencies": [],
+            "details": "Integrate the `Toaster` component from shadcn/ui. Create a reusable error handling function that can be used in `catch` blocks for data fetching operations (e.g., loading conversations). This function will trigger a toast with a user-friendly message like 'Failed to load data. Please refresh.'",
+            "status": "pending",
+            "testStrategy": "Simulate a failure in the API call that fetches the initial conversation history. Confirm that a toast notification appears with an appropriate error message, without blocking the rest of the UI."
+          },
+          {
+            "id": 5,
+            "title": "Enhance Accessibility and Polish UI States",
+            "description": "Review and add necessary ARIA attributes to all new loading and error state components to ensure they are accessible, and perform a final UI polish.",
+            "dependencies": [
+              "10.1",
+              "10.2",
+              "10.3",
+              "10.4"
+            ],
+            "details": "Add `aria-live` regions or `role='alert'` to error message components so they are announced by screen readers. Ensure skeleton loader containers have `aria-busy='true'`. Conduct a final visual review of all states to ensure consistent styling, spacing, and smooth transitions.",
+            "status": "pending",
+            "testStrategy": "Use a screen reader (e.g., VoiceOver, NVDA) to navigate the app during loading and after triggering an error. Verify that the loading state and error messages are announced correctly. Visually inspect the UI to ensure it looks polished."
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-26T03:49:43.470Z",
+      "updated": "2025-08-26T03:49:43.471Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

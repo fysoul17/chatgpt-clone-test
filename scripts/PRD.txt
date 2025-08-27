@@ -1,0 +1,200 @@
+<context>
+# Overview
+AI Chat Application is a minimal ChatGPT-like product that delivers core conversational AI capabilities with a modern web stack. It enables authenticated users to start, resume, and manage AI-powered conversations with responsive, streaming replies and secure persistence.
+
+# Core Features
+- User Authentication
+  - Sign up and sign in using Supabase Auth (email/password)
+  - Persistent session management
+  - Sign out to clear session
+
+- Chat Interface
+  - Multi-line message input with Enter to send and Shift+Enter for new line
+  - Send button disabled when input is empty
+  - Distinct alignment and styles: user (right), assistant (left)
+  - Timestamps per message and loading indicator while awaiting AI
+
+- Chat Management
+  - Start a new conversation
+  - Sidebar with chat history and navigation
+  - Delete conversations
+  - Auto-save messages to the database
+
+- AI Integration
+  - OpenAI API (GPT-4o or GPT-4o mini)
+  - Streaming responses for time-to-first-token under ~2s
+  - Graceful error handling and fallbacks
+  - Context maintenance by sending conversation history
+
+# User Experience
+- Personas
+  - Authenticated user interacting with an AI assistant via web UI
+
+- Key User Flows
+  - Sign up or sign in and land on dashboard
+  - Create a new conversation from the sidebar
+  - Send a message; see streaming assistant response
+  - View and continue previous conversations from history
+  - Delete a conversation via confirmation dialog
+
+- UI/UX Considerations
+  - Responsive, mobile-first layout
+  - Dark/Light mode via system preference
+  - Accessibility: keyboard navigation and ARIA labels
+  - shadcn/ui components (Button, Input, Textarea, ScrollArea, Dialog, DropdownMenu, Skeleton)
+  - Visual hierarchy with Tailwind (headers text-lg, messages text-base, timestamps text-sm)
+  - Consistent spacing and slate/zinc palettes
+</context>
+
+<PRD>
+# Technical Architecture
+- Tech Stack and Components
+  - Next.js 15+ App Router with Server Components for initial data and Client Components for real-time chat
+  - Tailwind CSS for styling; shadcn/ui for primitives
+  - Supabase (PostgreSQL + Auth + Realtime) for auth and persistence
+  - Next.js Route Handlers for API endpoints
+  - OpenAI API for LLM responses with streaming
+
+- State Management and Data Fetching
+  - Prefer Server Components for initial data (e.g., conversation list)
+  - Client-side fetching for real-time chat interactions
+  - Use TanStack Query or SWR with optimistic updates for sending messages
+
+- Data Models (Supabase)
+```sql
+-- Users table (managed by Supabase Auth)
+
+-- Conversations table
+CREATE TABLE conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Messages table
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+  role TEXT NOT NULL, -- 'user' or 'assistant'
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+- APIs and Integrations
+  - POST /api/chat: receives user message and streams AI response (ReadableStream/SSE)
+    - Request: { message: string, conversationId?: string }
+    - Response: streamed tokens
+    - Sends recent conversation history for context
+  - POST /api/conversations: create a new conversation, returns { id, title, created_at }
+  - GET /api/conversations: fetch user's conversations
+  - DELETE /api/conversations/[id]: delete conversation and messages
+
+- Infrastructure and Security
+  - Supabase project with Row Level Security (RLS) so users access only their data
+  - Environment variables for Supabase and OpenAI on server-side only
+  - CORS configuration for API routes
+  - Rate limiting on write/LLM endpoints
+  - Input sanitization to prevent XSS and related attacks
+
+# Development Roadmap
+- MVP Requirements (priority order)
+  1. Set up Next.js project and connect to Supabase
+  2. Implement authentication flow with Supabase Auth
+  3. Build basic chat UI using shadcn/ui
+  4. Integrate OpenAI API with streaming via Route Handler
+  5. Persist conversations and messages to database
+  6. Add conversation history list and navigation in sidebar
+  7. Implement loading and error state handling
+
+- Future Enhancements (deferred from MVP)
+  - Multiple AI model selection
+  - Message editing
+  - Code block syntax highlighting
+  - File attachments
+  - Conversation sharing
+  - Advanced prompt templates
+  - Token usage tracking
+  - Conversation export
+
+# Logical Dependency Chain
+- Foundation first
+  - Initialize Next.js app, Tailwind, shadcn/ui
+  - Configure Supabase and environment variables
+  - Create database tables and enable RLS
+  - Implement authentication flow and session handling
+- Visible, usable core
+  - Layout with sidebar and main chat area
+  - Chat input and message list with timestamps and styles
+  - OpenAI streaming endpoint and client consumption
+  - Auto-save user/assistant messages
+- Build upon it
+  - Conversation list, routing to specific conversation pages
+  - Delete conversation with confirmation dialog
+  - Robust loading and error states; optimistic UI updates
+
+# Risks and Mitigations
+- API Key Exposure
+  - Mitigation: Use OpenAI API only in server route handlers; never expose key to client
+- RLS Misconfiguration
+  - Mitigation: Strict policies ensuring users only access rows where user_id = auth.uid()
+- Rate Limiting and Abuse
+  - Mitigation: Apply per-user rate limits on chat endpoint; backoff strategies
+- Performance (TTFB/TTFT)
+  - Mitigation: Streaming responses, minimal initial context, efficient server-component data fetching
+- Data Integrity and XSS
+  - Mitigation: Sanitize inputs, escape outputs, validate payloads
+- CORS Issues
+  - Mitigation: Explicitly set allowed origins/headers for Next.js route handlers
+- Database Performance
+  - Mitigation: Index foreign keys, monitor query times (<100ms target)
+
+# Appendix
+- Environment Variables
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=YOUR_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_KEY
+
+# OpenAI
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+- Performance Targets
+  - Initial load < 3s
+  - Instant UI update on send (optimistic)
+  - AI response start < 2s (time to first token)
+  - Database queries < 100ms
+
+- Page Structure (Next.js App Router)
+```
+/app
+  /(auth)
+    /login
+    /signup
+  /(dashboard)
+    /layout.tsx         # Dashboard layout with sidebar
+    /chat
+      /[conversationId]/page.tsx  # Specific conversation page
+  /api
+    /chat/route.ts      # API endpoint for OpenAI streaming
+```
+
+- UI Components and Styling
+  - shadcn/ui: Button, Input, Textarea, ScrollArea, Dialog, DropdownMenu, Skeleton
+  - Tailwind palettes: slate or zinc; typography and spacing scale per design spec
+
+- Success Metrics
+  - User can sign up and sign in
+  - User can start a new conversation
+  - User can send a message and receive an AI response
+  - Conversations persist across sessions
+  - User can view and continue previous conversations
+  - User can delete a conversation
+</PRD>
